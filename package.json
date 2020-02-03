@@ -1,0 +1,25 @@
+{
+  "name": "employee_tracker",
+  "version": "1.0.0",
+  "description": "As a business owner\r I want to be able to view and manage the departments, roles, and employees in my company\r So that I can organize and plan my business",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/klangs34/employee_tracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/klangs34/employee_tracker/issues"
+  },
+  "homepage": "https://github.com/klangs34/employee_tracker#readme",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "inquirer": "^7.0.4",
+    "mysql": "^2.18.1"
+  }
+}
