@@ -2,6 +2,7 @@ require("dotenv").config();
 const inquirer = require("inquirer");
 const mysql = require("mysql");
 
+
 const connection = mysql.createConnection({
     host: "localhost",
     port: "3306",
@@ -115,8 +116,87 @@ function viewByManager() {
             }
         )
         .then(response => {
-            console.log(response);
-            connection.end();
-        })
+            //get employee id
+            const firstNameArr = response.manager.split(" ");
+            const lastNameIndex = response.manager.indexOf(" ");
+            const firstName = firstNameArr[0];
+            const lastName = response.manager.substring(lastNameIndex + 1, response.manager.length);
+            const queryEmployeeId  = "SELECT id FROM employee Where first_name = ? AND last_name = ?";
+            connection.query(queryEmployeeId, [firstName, lastName], (err, results) => {
+                if(err) throw err;
+                const queryManager = "SELECT * FROM employee WHERE manager_id = ?";
+                const managerId = results[0].id;
+                console.log(managerId)
+                connection.query(queryManager, [managerId], (err, data) => {
+                    if(err) throw err;
+                    console.table(data);
+                })
+                connection.end();
+            })
+        });
     });
+}
+
+function addEmployee() {
+    const employeeQuery = "SELECT * FROM employee";
+    const roleQuery = "SELECT * FROM role";
+    connection.query(employeeQuery, (err, employee) => {
+        if (err) throw err;
+        //console.table(results);
+        connection.query(roleQuery, (err, role) => {
+            if(err) throw err;
+            inquirer.prompt([
+                {
+                    type: "input",
+                    name: "fname",
+                    message: "Enter employee first name:"
+                },
+                {
+                    type: "input",
+                    name: "lname",
+                    message: "Enter employee last name:"
+                },
+                {
+                    type: "list",
+                    name: "role",
+                    message: "Choose employee role:",
+                    choices: () => role.map(val => val.title)
+                },
+                {
+                    type: "confirm",
+                    name: "hasManager",
+                    message: "Does employee have a manager?"
+                },
+                {
+                    type: "list",
+                    name: "manager",
+                    message: "Choose employee manager:",
+                    when: (answer) => answer.hasManager,
+                    choices:  () => employee.map(val => val.first_name + " " + val.last_name)
+                }
+            ])
+            .then(response => {
+                //insert data into employee table
+                const roleQuery = "SELECT id FROM role WHERE ?";
+                connection.query(roleQuery, { title: response.role}, (err, role) => {
+                    if(err) throw err;
+                    const roleId = role[0].id;
+                    const managerQuery = "SELECT id FROM employee WHERE ? AND ?";
+                    const firstName = response.manager.slice(0, response.manager.indexOf(" "));
+                    const lastName = response.manager.slice(response.manager.indexOf(" ") + 1, response.manager.length);
+                    connection.query(managerQuery, [{ first_name: firstName }, { last_name: lastName }], 
+                        (err, result) => {
+                            if(err) throw err;
+                            const employeeId = result[0].id;
+                            const query = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
+                            connection.query(query, [response.fname, response.lname, roleId, employeeId], (err, result) => {
+                                if(err) throw err;
+                                console.log(result);
+                                connection.end();
+                            })
+                        })
+                    });
+                });
+        })
+    })
 }
