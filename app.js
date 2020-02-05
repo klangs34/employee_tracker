@@ -191,7 +191,6 @@ function addEmployee() {
                             const query = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
                             connection.query(query, [response.fname, response.lname, roleId, employeeId], (err, result) => {
                                 if(err) throw err;
-                                console.log(result);
                                 connection.end();
                             })
                         })
@@ -199,4 +198,32 @@ function addEmployee() {
                 });
         })
     })
+}
+
+function removeEmployee() {
+    const query = "SELECT * FROM employee";
+    connection.query(query, (err, results) => {
+        if(err) throw err;
+        inquirer.prompt(
+            {
+                type: "list",
+                name: "remove",
+                message: "Which employee would you like to remove?",
+                choices: ()=> {
+                    return results.map(val => val.first_name + " " + val.last_name);
+                }
+            }
+        )
+        .then(response => {
+            //console.log(response)
+            const query = "DELETE FROM employee WHERE ? and ?";
+            const firstName = response.remove.slice(0, response.remove.indexOf(" "));
+            const lastName = response.remove.slice(response.remove.indexOf(" ") + 1, response.remove.length);
+            connection.query(query, [{ first_name: firstName }, { last_name: lastName }], (err, data) => {
+                if(err) throw err;
+                console.log("Record deleted successfully");
+                connection.end();
+            });
+        });
+    });
 }
