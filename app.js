@@ -86,6 +86,7 @@ function startTracker() {
 
 function quit() {
     console.log("Goodbye!");
+    connection.end();
     return;
 }
 
@@ -94,7 +95,7 @@ function viewRoles() {
     connection.query(query, (err, results) => {
         if (err) throw err;
         console.table(results);
-        connection.end();
+        startTracker();
     })
 }
 
@@ -103,7 +104,7 @@ function viewAllEmployees() {
     connection.query(query, (err, results) => {
         if (err) throw err;
         console.table(results);
-        connection.end();
+        startTracker();
     })
 }
 
@@ -112,8 +113,8 @@ function viewDepartments() {
     connection.query(query, (err, result) => {
         if(err) throw err;
         console.table(result);
+        startTracker();
     })
-    connection.end();
 }
 
 function viewByDepartment() {
@@ -139,8 +140,8 @@ function viewByDepartment() {
                 connection.query(newQuery, [departmentId], (err, response) => {
                     if(err) throw err;
                     console.table(response);
+                    startTracker();
                 });
-                connection.end();
             });
         })
     })
@@ -169,12 +170,11 @@ function viewByManager() {
                 if(err) throw err;
                 const queryManager = "SELECT * FROM employee WHERE manager_id = ?";
                 const managerId = results[0].id;
-                console.log(managerId)
                 connection.query(queryManager, [managerId], (err, data) => {
                     if(err) throw err;
                     console.table(data);
+                    startTracker();
                 })
-                connection.end();
             })
         });
     });
@@ -252,7 +252,7 @@ function addEmployee() {
                             const query = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
                             connection.query(query, [response.fname, response.lname, roleId, employeeId], (err, result) => {
                                 if(err) throw err;
-                                connection.end();
+                                viewAllEmployees();
                             })
                         })
                     });
@@ -318,7 +318,7 @@ function removeEmployee() {
             connection.query(query, [{ first_name: firstName }, { last_name: lastName }], (err, data) => {
                 if(err) throw err;
                 console.log("Record deleted successfully");
-                connection.end();
+                viewAllEmployees();
             });
         });
     });
@@ -359,7 +359,7 @@ function updateRole() {
                         (err, result) => {
                             if(err) throw err;
                             console.log("Employee role updated successfully!");
-                            connection.end();
+                            viewAllEmployees();
                         })
                 })
             });
@@ -403,7 +403,7 @@ function updateManager() {
                     (err, result) => {
                         if(err) throw err;
                         console.log("Employee manager updated successfully!");
-                        connection.end();
+                        viewAllEmployees();
                     })
                 })
             })
