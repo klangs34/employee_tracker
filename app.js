@@ -27,10 +27,15 @@ function startTracker() {
             "View All Employees",
             "View Employees By Department",
             "View All Employees By Manager",
+            "View Departments",
+            "View Roles",
             "Add Employee",
+            "Add Departments",
+            "Add Employee Roles",
             "Remove Employee",
             "Update Employee Role",
-            "Update Employee Manager"
+            "Update Employee Manager",
+            "Quit"
         ]
         }
     )
@@ -46,6 +51,18 @@ function startTracker() {
             case 'View All Employees By Manager':
                 viewByManager();
                 break;
+            case 'View Departments':
+                viewDepartments();
+                break;
+            case 'View Roles':
+                viewRoles();
+                break;
+            case 'Add Departments':
+                addDepartment();
+                break;
+            case 'Add Employee Roles':
+                addRole();
+                break;
             case 'Add Employee':
                 addEmployee();
                 break;
@@ -58,9 +75,26 @@ function startTracker() {
             case 'Update Employee Manager':
                 updateManager();
                 break;
+            case 'Quit':
+                quit();
+                break;
             default: 
                 console.log("Sorry, your response was not registered!");
         }
+    })
+}
+
+function quit() {
+    console.log("Goodbye!");
+    return;
+}
+
+function viewRoles() {
+    const query = "SELECT * FROM role"
+    connection.query(query, (err, results) => {
+        if (err) throw err;
+        console.table(results);
+        connection.end();
     })
 }
 
@@ -71,6 +105,15 @@ function viewAllEmployees() {
         console.table(results);
         connection.end();
     })
+}
+
+function viewDepartments() {
+    const query = "SELECT * FROM department";
+    connection.query(query, (err, result) => {
+        if(err) throw err;
+        console.table(result);
+    })
+    connection.end();
 }
 
 function viewByDepartment() {
@@ -137,6 +180,24 @@ function viewByManager() {
     });
 }
 
+function addDepartment() {
+    inquirer.prompt(
+        {
+            type: "input",
+            name: "name",
+            message: "Enter department name:"
+        }
+    )
+    .then(response => {
+        //insert data into department table
+        const query = "INSERT INTO department (name) VALUES (?)";
+        connection.query(query, [response.name], (err, department) => {
+            if(err) throw err;
+            console.log("Successfully entered department!")
+            viewDepartments();
+            });
+        })
+}
 function addEmployee() {
     const employeeQuery = "SELECT * FROM employee";
     const roleQuery = "SELECT * FROM role";
@@ -197,6 +258,41 @@ function addEmployee() {
                     });
                 });
         })
+    })
+}
+
+function addRole() {
+    const deptQuery = "SELECT * FROM Department";
+    connection.query(deptQuery, (err, dept) => {
+        if(err) throw err;
+        inquirer.prompt([
+            {
+                type: "input",
+                name: "name",
+                message: "Enter new role name:"
+            },
+            {
+                type: "input",
+                name: "salary",
+                message: "Enter new role salary:"
+            },
+            {
+                type: "list",
+                name: "department",
+                message: "Choose role department:",
+                choices: () => dept.map(val => val.name)
+            }
+        ])
+        .then(response => {
+            //console.log(response);
+            const deptId = "SELECT id FROM department WHERE ?";
+            connection.query(deptId, { name: response.department }, (err, result) => {
+                if(err) throw err;
+                const insertRole = "INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)";
+                connection.query(insertRole, [response.name, response.salary, result[0].id]);
+                viewRoles();
+            });
+        });
     })
 }
 
