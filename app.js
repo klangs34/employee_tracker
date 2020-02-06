@@ -136,7 +136,9 @@ function viewByDepartment() {
             connection.query(query, { name: results.department }, (err, data) => {
                 if(err) throw err;
                 const departmentId = data[0].id;
-                const newQuery = "SELECT * FROM employee e INNER JOIN role r on e.role_id = r.department_id Where e.role_id = ?";
+                const newQuery = `SELECT e.first_name, e.last_name, r.title as Role, d.name as Department
+                FROM employee e INNER JOIN role r on e.role_id = r.id 
+                INNER JOIN department d on d.id = r.department_id Where d.id = ?`;
                 connection.query(newQuery, [departmentId], (err, response) => {
                     if(err) throw err;
                     console.table(response);
@@ -243,18 +245,26 @@ function addEmployee() {
                     if(err) throw err;
                     const roleId = role[0].id;
                     const managerQuery = "SELECT id FROM employee WHERE ? AND ?";
-                    const firstName = response.manager.slice(0, response.manager.indexOf(" "));
-                    const lastName = response.manager.slice(response.manager.indexOf(" ") + 1, response.manager.length);
-                    connection.query(managerQuery, [{ first_name: firstName }, { last_name: lastName }], 
-                        (err, result) => {
-                            if(err) throw err;
-                            const employeeId = result[0].id;
+                    if(response.manager){
+                        const firstName = response.manager.slice(0, response.manager.indexOf(" "));
+                        const lastName = response.manager.slice(response.manager.indexOf(" ") + 1, response.manager.length);
+                        connection.query(managerQuery, [{ first_name: firstName }, { last_name: lastName }], 
+                            (err, result) => {
+                                if(err) throw err;
+                                const employeeId = result[0].id;
+                                const query = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
+                                connection.query(query, [response.fname, response.lname, roleId, employeeId], (err, result) => {
+                                    if(err) throw err;
+                                    viewAllEmployees();
+                                })
+                            })
+                        } else {
                             const query = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
-                            connection.query(query, [response.fname, response.lname, roleId, employeeId], (err, result) => {
+                            connection.query(query, [response.fname, response.lname, roleId, null], (err, result) => {
                                 if(err) throw err;
                                 viewAllEmployees();
                             })
-                        })
+                        }
                     });
                 });
         })
