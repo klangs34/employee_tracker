@@ -227,3 +227,91 @@ function removeEmployee() {
         });
     });
 }
+
+function updateRole() {
+    const query = "SELECT * FROM employee";
+    connection.query(query, (err, results) => {
+        if(err) throw err;
+        const roleQuery = "SELECT * FROM role";
+        connection.query(roleQuery, (err, data) => {
+            if(err) throw err;
+            inquirer.prompt([
+                {
+                    type: "list",
+                    name: "update",
+                    message: "Which employee role would you like to update?",
+                    choices: ()=> {
+                        return results.map(val => val.first_name + " " + val.last_name);
+                    }
+                },
+                {
+                    type: "list",
+                    name: "role",
+                    message: "Choose new role for employee:",
+                    choices: ()=> data.map(val => val.title)
+                }
+            ])
+            .then(response => {
+                //console.log(response);
+                const firstName = response.update.slice(0, response.update.indexOf(" "));
+                const lastName = response.update.slice(response.update.indexOf(" ") + 1, response.update.length);
+                const roleQuery = "SELECT id from role WHERE ?"
+                connection.query(roleQuery, { title: response.role }, (err, result) => {
+                    if(err) throw err;
+                    const updateQuery = "UPDATE employee SET ? WHERE ? AND ?";
+                    connection.query(updateQuery, [{ role_id: result[0].id }, { first_name: firstName }, { last_name: lastName }],
+                        (err, result) => {
+                            if(err) throw err;
+                            console.log("Employee role updated successfully!");
+                            connection.end();
+                        })
+                })
+            });
+        });
+    })
+}
+
+function updateManager() {
+    const query = "SELECT * FROM employee";
+    connection.query(query, (err, data) => {
+        if(err) throw err;
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "updateMgr",
+                message: "Which employee manager would you like to update?",
+                choices: ()=> {
+                    return data.map(val => val.first_name + " " + val.last_name);
+                }
+            },
+            {
+                type: "list",
+                name: "manager",
+                message: "Choose new manager for employee:", 
+                choices: (answers)=> data.filter(val => `${val.first_name} ${val.last_name}` !== answers.updateMgr).map(val => `${val.first_name} ${val.last_name}`)
+            }
+        ])
+        .then(response => {
+            const firstNameQuery = response.updateMgr.slice(0, response.updateMgr.indexOf(" "));
+            const lastNameQuery = response.updateMgr.slice(response.updateMgr.indexOf(" ") + 1, response.updateMgr.length);
+            const selectQuery = "SELECT id from employee WHERE ? AND ?"
+            connection.query(selectQuery, [{ first_name: firstNameQuery }, { last_name: lastNameQuery }], (err, employee) => {
+                if(err) throw err;
+                const mgrFirstName = response.manager.slice(0, response.manager.indexOf(" "));
+                const mgrLastName = response.manager.slice(response.manager.indexOf(" ") + 1, response.manager.length);
+                const mgrId = "SELECT id FROM employee WHERE ? AND ?";
+                connection.query(mgrId, [{ first_name: mgrFirstName }, { last_name: mgrLastName }], (err, manager) => {
+                
+                const updateQuery = "UPDATE employee SET ? WHERE ?";
+                connection.query(updateQuery, [{ manager_id: manager[0].id }, { id: employee[0].id }],
+                    (err, result) => {
+                        if(err) throw err;
+                        console.log("Employee manager updated successfully!");
+                        connection.end();
+                    })
+                })
+            })
+        });
+ 
+    })
+}
